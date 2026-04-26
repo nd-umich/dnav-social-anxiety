@@ -842,18 +842,24 @@ const ADVISOR_TOOLS = [
   { id: 'self-compassion', name: 'Self-compassion', desc: 'Three steps: "This is a moment of struggle. Struggle is part of being human. May I be kind to myself right now."' }
 ];
 
-const NOTICER_TOOLS = [
+const GROUNDING_TOOLS = [
   { id: 'drop-anchor', name: 'Drop anchor', desc: 'Push your feet into the floor, straighten your back, look around and name 5 things you can see. Anchors you in the present.' },
   { id: '54321', name: '5-4-3-2-1 senses', desc: '5 things you see, 4 you can touch, 3 you hear, 2 you smell, 1 you taste. Brings attention back to the body.' },
-  { id: 'clear-picture', name: 'Take a clear picture', desc: 'Pause and describe what\'s happening right now, factually, like a camera: "I am sitting. The light is dim. My chest feels tight."' },
-  { id: 'make-room', name: 'Make-room breathing', desc: 'Breathe in, and on the exhale imagine making space inside your body for whatever feeling is there — not pushing it away, just giving it room.' },
-  { id: 'willing-hands', name: 'Willing hands', desc: 'Turn your palms upward, soften your fingers. The body posture of openness signals willingness to your nervous system.' },
-  { id: 'attention-flashlight', name: 'Attention flashlight', desc: 'Notice where your attention is pointed (inward? at others? at threat?), then deliberately widen it — what\'s in the room you hadn\'t noticed?' },
-  { id: 'name-emotion', name: 'Name the emotion', desc: 'Pause and label what you\'re feeling: "This is anxiety." "This is sadness." Naming reduces intensity.' },
   { id: 'cold-water', name: 'Cold water', desc: 'Splash cold water on your face or wrists, or hold a cold object. Activates the dive reflex and helps regulate when overwhelmed.' },
   { id: 'strong-sensation', name: 'Strong sensation', desc: 'A sour candy, ice cube, or strong mint. A sharp sensory anchor when distress is too high to think.' },
   { id: 'physical-movement', name: 'Physical movement', desc: 'Walk, jog in place, jump rope, take stairs for a few minutes. Burns off acute distress and resets the nervous system.' }
 ];
+
+const WILLINGNESS_TOOLS = [
+  { id: 'make-room', name: 'Make-room breathing', desc: 'Breathe in, and on the exhale imagine making space inside your body for whatever feeling is there — not pushing it away, just giving it room.' },
+  { id: 'willing-hands', name: 'Willing hands', desc: 'Turn your palms upward, soften your fingers. The body posture of openness signals willingness to your nervous system.' },
+  { id: 'clear-picture', name: 'Take a clear picture', desc: 'Pause and describe what\'s happening right now, factually, like a camera: "I am sitting. The light is dim. My chest feels tight."' },
+  { id: 'attention-flashlight', name: 'Attention flashlight', desc: 'Notice where your attention is pointed (inward? at others? at threat?), then deliberately widen it — what\'s in the room you hadn\'t noticed?' },
+  { id: 'name-emotion', name: 'Name the emotion', desc: 'Pause and label what you\'re feeling: "This is anxiety." "This is sadness." Naming reduces intensity.' }
+];
+
+// Combined list for lookups (toolName helper)
+const NOTICER_TOOLS = [...GROUNDING_TOOLS, ...WILLINGNESS_TOOLS];
 
 const VALUES_LIST = ['Acceptance','Achievement','Admiration','Appreciation','Asking for help','Assertiveness','Authenticity','Autonomy','Belonging','Caring','Challenge','Commitment','Compassion','Confidence','Connection','Contribution','Cooperation','Courage','Creativity','Curiosity','Dependability','Embracing the moment','Encouragement','Equality','Excitement','Fairness','Flexibility','Forgiveness','Freedom','Friendliness','Friendship','Fun','Generosity','Genuineness','Gratitude','Helpfulness','Honesty','Hope','Humility','Humor','Independence','Individuality','Industry','Justice','Kindness','Knowledge / learning','Mindfulness','Moderation','Nurturance','Open-mindedness','Order','Patience','Persistence','Productivity','Purpose','Realism','Reciprocity','Respect','Responsibility','Safety','Security','Seeing possibilities','Self-awareness','Self-care','Self-control','Self-development','Skillfulness','Staying with uncertainty','Supportiveness','Trust','Wisdom'];
 
@@ -881,7 +887,7 @@ function makeBlankEntry() {
     experimentText: '', zone: '', safetyDropped: '',
     values: [], valuesNote: '',
     prediction: '', otherMessages: '', advisorTools: [],
-    anxiety: 50, emotions: [], willingness: 50, noticerTools: [],
+    anxiety: 50, emotions: [], otherEmotion: '', willingness: 50, noticerTools: [],
     outcome: ''
   };
 }
@@ -1046,17 +1052,26 @@ function renderNoticer() {
   const e = state.entry;
   const z = zoneFromAnxiety(e.anxiety);
   const count = e.noticerTools.length;
-  const toolsHtml = NOTICER_TOOLS.map(t => {
-    const checked = e.noticerTools.includes(t.id);
+
+  const renderToolGroup = (list, heading) => {
+    const items = list.map(t => {
+      const checked = e.noticerTools.includes(t.id);
+      return `
+        <div class="tool-item ${checked ? 'selected' : ''}">
+          <label class="tool-head">
+            <input type="checkbox" ${checked ? 'checked' : ''} data-ntool-cb="${t.id}">
+            <span class="tool-name">${t.name}</span>
+          </label>
+          <div class="tool-desc">${t.desc}</div>
+        </div>`;
+    }).join('');
     return `
-      <div class="tool-item ${checked ? 'selected' : ''}">
-        <label class="tool-head">
-          <input type="checkbox" ${checked ? 'checked' : ''} data-ntool-cb="${t.id}">
-          <span class="tool-name">${t.name}</span>
-        </label>
-        <div class="tool-desc">${t.desc}</div>
-      </div>`;
-  }).join('');
+      <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); font-weight: 500; margin: 16px 0 4px;">${heading}</h4>
+      <div class="tool-list" style="margin-top: 4px;">${items}</div>`;
+  };
+
+  const toolsHtml = renderToolGroup(GROUNDING_TOOLS, 'Grounding tools (overwhelm)') +
+                    renderToolGroup(WILLINGNESS_TOOLS, 'Willingness tools (manageable discomfort)');
 
   const emotionChips = EMOTIONS.map(em => `
     <span class="chip ${e.emotions.includes(em) ? 'selected' : ''}" data-emotion="${em}">${em}</span>
@@ -1074,8 +1089,9 @@ function renderNoticer() {
 
     <label class="field-label">Which emotions are showing up?</label>
     <div class="chip-row">${emotionChips}</div>
+    <textarea id="f-other-emotion" rows="2" placeholder="Other emotions (optional) — write your own…" style="margin-top: 8px;">${esc(e.otherEmotion)}</textarea>
 
-    <label class="field-label">Willingness to have difficult emotions</label>
+    <label class="field-label">Willingness to have emotion(s)</label>
     <p class="help-text">Willingness isn't wanting. It's making room for what shows up. (0–100)</p>
     <div class="slider-row">
       <input type="range" id="f-willing" min="0" max="100" step="1" value="${e.willingness}">
@@ -1088,7 +1104,7 @@ function renderNoticer() {
       ${count > 0 ? `<span class="reveal-summary compact">(${count} selected)</span>` : ''}
     </button>
     ${state.noticerOpen
-      ? `<div class="tool-list">${toolsHtml}</div>`
+      ? toolsHtml
       : (count > 0 ? `<div class="reveal-summary">Selected: ${e.noticerTools.map(id => esc(toolName(id, NOTICER_TOOLS))).join(', ')}</div>` : '')
     }
   `;
@@ -1225,6 +1241,7 @@ function renderModal() {
         <h3>Noticer</h3>
         <p><span class="zone-pill ${z.key}">Anxiety ${e.anxiety} · ${z.label}</span></p>
         ${e.emotions.length ? `<p><span class="label">Emotions:</span> ${e.emotions.map(esc).join(', ')}</p>` : ''}
+        ${e.otherEmotion ? `<p><span class="label">Other emotions:</span> ${esc(e.otherEmotion)}</p>` : ''}
         <p><span class="label">Willingness:</span> ${e.willingness} / 100</p>
         ${e.noticerTools.length ? `<p><span class="label">Grounding and willingness tools:</span><br>${e.noticerTools.map(id => esc(toolName(id, NOTICER_TOOLS))).join(', ')}</p>` : ''}
       </div>
@@ -1295,6 +1312,7 @@ function bindEntryEvents() {
   bindInput('f-prediction', v => e.prediction = v);
   bindInput('f-other', v => e.otherMessages = v);
   bindInput('f-outcome', v => e.outcome = v);
+  bindInput('f-other-emotion', v => e.otherEmotion = v);
 
   document.querySelectorAll('[data-zone]').forEach(b => {
     b.addEventListener('click', () => {
@@ -1512,6 +1530,7 @@ function printSingle(e) {
     <h2>Noticer</h2>
     <p><span class="label">Anxiety:</span> ${e.anxiety} / 100 (${esc(z.label)})</p>
     ${e.emotions.length ? `<p><span class="label">Emotions:</span> ${e.emotions.map(esc).join(', ')}</p>` : ''}
+    ${e.otherEmotion ? `<p><span class="label">Other emotions:</span> ${esc(e.otherEmotion)}</p>` : ''}
     <p><span class="label">Willingness:</span> ${e.willingness} / 100</p>
     ${e.noticerTools.length ? `<p><span class="label">Grounding and willingness tools:</span> ${e.noticerTools.map(id => esc(toolName(id, NOTICER_TOOLS))).join(', ')}</p>` : ''}
 
@@ -1534,7 +1553,7 @@ function printAll() {
         <td>${e.values.map(esc).join(', ')}${e.valuesNote ? `<br><em>${esc(e.valuesNote)}</em>` : ''}</td>
         <td>${e.prediction ? `<strong>Prediction:</strong> ${esc(e.prediction)}<br>` : ''}${e.otherMessages ? `<strong>Other:</strong> ${esc(e.otherMessages)}` : ''}</td>
         <td>${e.advisorTools.map(id => esc(toolName(id, ADVISOR_TOOLS))).join(', ')}</td>
-        <td>Anxiety: ${e.anxiety} (${esc(z.label)})<br>${esc(e.emotions.join(', '))}<br>Willingness: ${e.willingness}</td>
+        <td>Anxiety: ${e.anxiety} (${esc(z.label)})<br>${esc(e.emotions.join(', '))}${e.otherEmotion ? '<br>' + esc(e.otherEmotion) : ''}<br>Willingness: ${e.willingness}</td>
         <td>${e.noticerTools.map(id => esc(toolName(id, NOTICER_TOOLS))).join(', ')}</td>
         <td>${esc(e.outcome)}</td>
       </tr>`;
