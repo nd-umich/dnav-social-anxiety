@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#f5f1ea">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="DNA-V Log">
+<meta name="description" content="A self-monitoring app for DNA-V behavioural experiments">
+<title>DNA-V Behavioural Log</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #f5f1ea;
+    --surface: #fdfbf6;
+    --surface-2: #efeae0;
+    --ink: #2a2620;
+    --ink-soft: #5a544a;
+    --ink-muted: #8a8378;
+    --line: #e0d8c8;
+    --line-soft: #ebe4d4;
+    --accent: #6b5d4f;
+
+    --d-bg: #f7e6dc;
+    --d-ink: #6b3018;
+    --d-line: #d89878;
+    --n-bg: #def0e7;
+    --n-ink: #1f5a44;
+    --n-line: #6fb594;
+    --a-bg: #e7e3f5;
+    --a-ink: #3d3470;
+    --a-line: #9a8fc7;
+    --v-bg: #f5e8c8;
+    --v-ink: #6b4f0a;
+    --v-line: #c9a747;
+
+    --zone-yellow-bg: #f5e8c8;
+    --zone-yellow-ink: #6b4f0a;
+    --zone-yellow-line: #c9a747;
+    --zone-orange-bg: #f7e0cc;
+    --zone-orange-ink: #7a3a14;
+    --zone-orange-line: #d8884a;
+    --zone-red-bg: #f5d8d4;
+    --zone-red-ink: #7a1f1c;
+    --zone-red-line: #c95048;
+
+    --radius: 10px;
+    --radius-lg: 14px;
+
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* App shell */
+  .app {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 16px 80px;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+
+  /* Header */
+  .header {
+    padding: 24px 0 16px;
+    border-bottom: 0.5px solid var(--line);
+    margin-bottom: 16px;
+  }
+  .header h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 28px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .header .subtitle {
+    font-size: 13px;
+    color: var(--ink-muted);
+    letter-spacing: 0.02em;
+  }
+
+  /* Bottom tab nav (mobile-first) */
+  .tab-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 0.5px solid var(--line);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -1px 8px rgba(0,0,0,0.02);
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--ink-muted);
+    padding: 14px 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    border-top: 2px solid transparent;
+    margin-top: -1px;
+    font-weight: 500;
+  }
+  .tab-btn.active {
+    color: var(--ink);
+    border-top-color: var(--ink);
+  }
+  .tab-icon {
+    width: 22px; height: 22px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.5;
+  }
+
+  /* Step nav (clickable progress) */
+  .step-nav {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    margin-bottom: 20px;
+  }
+  .step-pill {
+    background: var(--surface-2);
+    border: 0.5px solid transparent;
+    border-radius: var(--radius);
+    padding: 10px 4px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--ink-soft);
+    font-weight: 500;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .step-pill:hover { border-color: var(--line); }
+  .step-pill.active {
+    background: var(--surface);
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+  .step-pill .pname {
+    display: block;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+    margin-bottom: 3px;
+    font-weight: 500;
+  }
+  .step-pill.active .pname { color: var(--ink-soft); }
+
+  /* Step card */
+  .step-card {
+    background: var(--surface);
+    border: 0.5px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .dna-badge {
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .dna-d { background: var(--d-bg); color: var(--d-ink); }
+  .dna-n { background: var(--n-bg); color: var(--n-ink); }
+  .dna-a { background: var(--a-bg); color: var(--a-ink); }
+  .dna-v { background: var(--v-bg); color: var(--v-ink); }
+  .step-title {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 22px;
+    margin: 0;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  /* Form fields */
+  .field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    margin: 20px 0 6px;
+    letter-spacing: 0.01em;
+  }
+  .field-label:first-child { margin-top: 0; }
+  .help-text {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    font-family: inherit;
+    font-size: 16px;
+    color: var(--ink);
+    background: var(--bg);
+    border: 0.5px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    line-height: 1.5;
+    resize: vertical;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color 0.15s;
+  }
+  textarea:focus, input[type="text"]:focus {
+    outline: none;
+    border-color: var(--ink-soft);
+    background: var(--surface);
+  }
+
+  /* Sliders */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 32px;
+    background: transparent;
+    outline: none;
+    margin: 0;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1.5px solid var(--ink);
+    margin-top: -12px;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  input[type="range"]::-moz-range-track {
+    height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1.5px solid var(--ink);
+    cursor: pointer;
+  }
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 8px;
+  }
+  .slider-row input[type="range"] { flex: 1; }
+  .slider-val {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 500;
+    min-width: 44px;
+    text-align: right;
+    color: var(--ink);
+    font-feature-settings: "tnum";
+  }
+
+  /* Zone buttons */
+  .zone-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  @media (min-width: 480px) {
+    .zone-buttons { grid-template-columns: 1fr 1fr 1fr; }
+  }
+  .zone-btn {
+    border: 0.5px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px;
+    background: var(--bg);
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: all 0.15s;
+    color: var(--ink);
+    width: 100%;
+  }
+  .zone-btn:hover { border-color: var(--ink-muted); }
+  .zone-btn-name {
+    font-weight: 500;
+    font-size: 15px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .zone-btn-range {
+    font-size: 12px;
+    color: var(--ink-muted);
+    display: block;
+    font-feature-settings: "tnum";
+  }
+  .zone-btn.yellow.selected {
+    background: var(--zone-yellow-bg);
+    border-color: var(--zone-yellow-line);
+    color: var(--zone-yellow-ink);
+  }
+  .zone-btn.orange.selected {
+    background: var(--zone-orange-bg);
+    border-color: var(--zone-orange-line);
+    color: var(--zone-orange-ink);
+  }
+  .zone-btn.red.selected {
+    background: var(--zone-red-bg);
+    border-color: var(--zone-red-line);
+    color: var(--zone-red-ink);
+  }
+  .zone-btn.selected .zone-btn-range { color: inherit; opacity: 0.7; }
+
+  .zone-callout {
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    margin-top: 12px;
+    line-height: 1.5;
+  }
+  .zone-callout.yellow { background: var(--zone-yellow-bg); color: var(--zone-yellow-ink); }
+  .zone-callout.orange { background: var(--zone-orange-bg); color: var(--zone-orange-ink); }
+  .zone-callout.red { background: var(--zone-red-bg); color: var(--zone-red-ink); }
+
+  /* Anxiety bar (visual under slider) */
+  .anxiety-bar {
+    display: grid;
+    grid-template-columns: 30fr 50fr 20fr;
+    gap: 2px;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .anxiety-bar div:nth-child(1) { background: var(--zone-yellow-line); }
+  .anxiety-bar div:nth-child(2) { background: var(--zone-orange-line); }
+  .anxiety-bar div:nth-child(3) { background: var(--zone-red-line); }
+
+  .zone-pill {
+    display: inline-block;
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-weight: 500;
+    margin-top: 8px;
+    letter-spacing: 0.02em;
+  }
+  .zone-pill.yellow { background: var(--zone-yellow-bg); color: var(--zone-yellow-ink); }
+  .zone-pill.orange { background: var(--zone-orange-bg); color: var(--zone-orange-ink); }
+  .zone-pill.red { background: var(--zone-red-bg); color: var(--zone-red-ink); }
+
+  /* Reveal button */
+  .reveal-btn {
+    margin-top: 14px;
+    padding: 12px 16px;
+    background: var(--bg);
+    border: 0.5px solid var(--ink-soft);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+  .reveal-btn:hover { background: var(--surface-2); }
+  .reveal-btn .arrow {
+    transition: transform 0.2s;
+    font-size: 11px;
+    line-height: 1;
+  }
+  .reveal-btn.open .arrow { transform: rotate(90deg); }
+  .reveal-summary {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin: 8px 0 0 4px;
+    line-height: 1.5;
+  }
+  .reveal-summary.compact { margin-left: auto; color: var(--ink-soft); font-size: 12px; }
+
+  /* Tool list */
+  .tool-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .tool-item {
+    border: 0.5px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    background: var(--bg);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .tool-item.selected {
+    border-color: var(--ink-soft);
+    background: var(--surface-2);
+  }
+  .tool-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+  }
+  .tool-head input[type="checkbox"] {
+    width: 20px; height: 20px;
+    margin: 0;
+    flex-shrink: 0;
+    accent-color: var(--ink);
+    cursor: pointer;
+  }
+  .tool-name {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+  .tool-desc {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    line-height: 1.55;
+    padding-left: 32px;
+  }
+  .tool-desc em {
+    font-style: italic;
+    color: var(--ink-muted);
+  }
+
+  /* Values grid */
+  .values-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px;
+    border: 0.5px solid var(--line);
+    border-radius: var(--radius);
+    margin-top: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+    background: var(--bg);
+    -webkit-overflow-scrolling: touch;
+  }
+  .value-chip {
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    border: 0.5px solid var(--line);
+    background: var(--surface);
+    transition: all 0.15s;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .value-chip:hover { border-color: var(--ink-muted); }
+  .value-chip.selected {
+    background: var(--v-bg);
+    color: var(--v-ink);
+    border-color: var(--v-line);
+    font-weight: 500;
+  }
+
+  /* Emotion chips */
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .chip {
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    border: 0.5px solid var(--line);
+    background: var(--bg);
+    user-select: none;
+    -webkit-user-select: none;
+    transition: all 0.15s;
+  }
+  .chip.selected {
+    background: var(--n-bg);
+    color: var(--n-ink);
+    border-color: var(--n-line);
+    font-weight: 500;
+  }
+
+  /* Nav row buttons */
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .btn {
+    padding: 14px 20px;
+    border-radius: var(--radius);
+    border: 0.5px solid var(--line);
+    background: var(--surface);
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.15s;
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    max-width: 160px;
+  }
+  .btn:hover { background: var(--surface-2); border-color: var(--ink-muted); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--ink);
+    color: var(--surface);
+    border-color: var(--ink);
+  }
+  .btn-primary:hover { background: var(--ink-soft); border-color: var(--ink-soft); }
+
+  /* History */
+  .entry-row {
+    background: var(--surface);
+    border: 0.5px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .entry-row:hover { border-color: var(--ink-muted); }
+  .entry-row-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+  .entry-title {
+    font-size: 15px;
+    font-weight: 500;
+    margin: 0;
+    line-height: 1.4;
+    flex: 1;
+    min-width: 0;
+  }
+  .entry-date {
+    font-size: 12px;
+    color: var(--ink-muted);
+    flex-shrink: 0;
+    font-feature-settings: "tnum";
+  }
+  .entry-meta {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .entry-meta-item {
+    background: var(--surface-2);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-feature-settings: "tnum";
+  }
+  .empty-state {
+    text-align: center;
+    padding: 48px 16px;
+    color: var(--ink-muted);
+    font-size: 14px;
+  }
+  .empty-state .empty-display {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-style: italic;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .toolbar .btn {
+    flex: 0 0 auto;
+    max-width: none;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  /* Print view */
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-top: 12px;
+    table-layout: fixed;
+    background: var(--surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .print-table th, .print-table td {
+    border: 0.5px solid var(--line);
+    padding: 8px;
+    vertical-align: top;
+    text-align: left;
+  }
+  .print-table th {
+    background: var(--surface-2);
+    font-weight: 500;
+    font-size: 11px;
+    color: var(--ink);
+  }
+  .print-table th .col-sub {
+    font-weight: 400;
+    color: var(--ink-muted);
+    display: block;
+    margin-top: 2px;
+  }
+  .print-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Modal for entry detail */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(42, 38, 32, 0.4);
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    width: 100%;
+    max-width: 640px;
+    max-height: 85vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  @media (min-width: 640px) {
+    .modal-overlay { align-items: center; }
+    .modal { border-radius: var(--radius-lg); max-height: 80vh; }
+  }
+  .modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 500;
+    margin: 0;
+    flex: 1;
+    line-height: 1.3;
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 24px;
+    color: var(--ink-muted);
+    padding: 4px 8px;
+    line-height: 1;
+  }
+  .modal-section {
+    border-top: 0.5px solid var(--line-soft);
+    padding: 14px 0;
+  }
+  .modal-section:first-of-type { border-top: none; padding-top: 0; }
+  .modal-section h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+    margin: 0 0 8px;
+    font-weight: 500;
+  }
+  .modal-section p {
+    margin: 4px 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .modal-section .label {
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 0.5px solid var(--line-soft);
+  }
+  .btn-danger {
+    color: var(--zone-red-ink);
+    border-color: var(--zone-red-line);
+  }
+
+  /* Print styles */
+  @media print {
+    body { background: white; }
+    .tab-bar, .toolbar, .step-nav, .nav-row, .header { display: none !important; }
+    .app { padding: 0; max-width: none; }
+    .step-card, .entry-row { break-inside: avoid; }
+    .print-table th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+
+  /* Loading state */
+  .loading {
+    text-align: center;
+    padding: 48px 16px;
+    color: var(--ink-muted);
+    font-family: var(--font-display);
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="header">
+    <h1>DNA-V Behavioural Log</h1>
+    <p class="subtitle">Self-monitoring for behavioural experiments</p>
+  </header>
+
+  <main id="main-content">
+    <div class="loading">Loading…</div>
+  </main>
+
+</div>
+
+<nav class="tab-bar" id="tab-bar">
+  <button class="tab-btn active" data-view="entry">
+    <svg class="tab-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    New entry
+  </button>
+  <button class="tab-btn" data-view="history">
+    <svg class="tab-icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9M3 12l3-3M3 12l3 3M12 7v5l3 2"/></svg>
+    History
+  </button>
+  <button class="tab-btn" data-view="more">
+    <svg class="tab-icon" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/></svg>
+    More
+  </button>
+</nav>
+
+<script>
+'use strict';
+
+// ============================================================
+// DATA
+// ============================================================
+
+const STEPS = [
+  { key: 'discoverer1', dna: 'D', dnaLabel: 'Discoverer', cls: 'dna-d', title: 'The behavioural experiment', short: 'Experiment' },
+  { key: 'values',      dna: 'V', dnaLabel: 'Values',     cls: 'dna-v', title: 'Values this serves',          short: 'Values' },
+  { key: 'advisor',     dna: 'A', dnaLabel: 'Advisor',    cls: 'dna-a', title: 'Your advisor mind',           short: 'Advisor' },
+  { key: 'noticer',     dna: 'N', dnaLabel: 'Noticer',    cls: 'dna-n', title: 'Noticing what shows up',      short: 'Noticer' },
+  { key: 'discoverer2', dna: 'D', dnaLabel: 'Discoverer', cls: 'dna-d', title: 'What happened',               short: 'Reflect' }
+];
+
+const ZONES = {
+  yellow: { key: 'yellow', label: 'Comfort',                range: '0–30',   desc: 'Familiar territory. Useful as a baseline, but learning happens outside this zone.' },
+  orange: { key: 'orange', label: 'Manageable discomfort',  range: '30–80',  desc: 'The learning zone. Hard but doable. This is where behavioural experiments do their work.' },
+  red:    { key: 'red',    label: 'Overwhelmed',            range: '80–100', desc: 'Uncomfortable, not dangerous. It will pass. Use noticer tools to come back toward the learning zone.' }
+};
+
+const ADVISOR_TOOLS = [
+  { id: 'advisor-script', name: 'Advisor script', desc: '<em>Try this:</em> "My Advisor is saying ______. Thank you, Advisor — that\'s (un)helpful. I\'m choosing to ______ in service of more ______."' },
+  { id: 'notice-thought', name: 'I notice I\'m having the thought that…', desc: 'Reframe "I\'ll fail" as "I notice I\'m having the thought that I\'ll fail." Reminds you that thoughts are events, not facts.' },
+  { id: 'thank-advisor', name: 'Thank the Advisor', desc: 'Say: "Thanks, Advisor, I hear you. I\'m going to try this anyway." Acknowledges the thought without arguing or obeying.' },
+  { id: 'advisor-radio', name: 'Advisor radio', desc: 'Imagine your Advisor as a radio you can turn down — but not off. The voice keeps playing in the background; you just lower the volume.' },
+  { id: 'name-advisor', name: 'Give your Advisor a name', desc: 'Call it Dr. Anxiety, the Inner Critic, or something playful. Naming it as a character creates distance from it.' },
+  { id: 'silly-voice', name: 'Silly voice', desc: 'Hear the thought in a cartoon voice — Kermit, SpongeBob, Donald Duck. Sing it. Reduces the thought\'s emotional weight.' },
+  { id: 'text-messages', name: 'Text messages', desc: 'Imagine the Advisor as a texting app. Notifications keep coming. You don\'t have to reply to every text.' },
+  { id: 'leaves-stream', name: 'Leaves on a stream', desc: 'Place each thought on a leaf floating down a stream, or on a cloud drifting by. Watch it pass without grabbing it.' },
+  { id: 'repeat-word', name: 'Repeat the thought', desc: 'Say the thought (or a single sticky word) out loud over and over for 30 seconds. The meaning often dissolves into sound.' },
+  { id: 'kind-coach', name: 'Kind coach', desc: 'Speak to yourself as a kind coach would — honest AND encouraging. "This is hard. You can do this. I\'ve got you."' },
+  { id: 'self-compassion', name: 'Self-compassion', desc: 'Three steps: "This is a moment of struggle. Struggle is part of being human. May I be kind to myself right now."' }
+];
+
+const NOTICER_TOOLS = [
+  { id: 'drop-anchor', name: 'Drop anchor', desc: 'Push your feet into the floor, straighten your back, look around and name 5 things you can see. Anchors you in the present.' },
+  { id: '54321', name: '5-4-3-2-1 senses', desc: '5 things you see, 4 you can touch, 3 you hear, 2 you smell, 1 you taste. Brings attention back to the body.' },
+  { id: 'clear-picture', name: 'Take a clear picture', desc: 'Pause and describe what\'s happening right now, factually, like a camera: "I am sitting. The light is dim. My chest feels tight."' },
+  { id: 'make-room', name: 'Make-room breathing', desc: 'Breathe in, and on the exhale imagine making space inside your body for whatever feeling is there — not pushing it away, just giving it room.' },
+  { id: 'willing-hands', name: 'Willing hands', desc: 'Turn your palms upward, soften your fingers. The body posture of openness signals willingness to your nervous system.' },
+  { id: 'attention-flashlight', name: 'Attention flashlight', desc: 'Notice where your attention is pointed (inward? at others? at threat?), then deliberately widen it — what\'s in the room you hadn\'t noticed?' },
+  { id: 'name-emotion', name: 'Name the emotion', desc: 'Pause and label what you\'re feeling: "This is anxiety." "This is sadness." Naming reduces intensity.' },
+  { id: 'cold-water', name: 'Cold water', desc: 'Splash cold water on your face or wrists, or hold a cold object. Activates the dive reflex and helps regulate when overwhelmed.' },
+  { id: 'strong-sensation', name: 'Strong sensation', desc: 'A sour candy, ice cube, or strong mint. A sharp sensory anchor when distress is too high to think.' },
+  { id: 'physical-movement', name: 'Physical movement', desc: 'Walk, jog in place, jump rope, take stairs for a few minutes. Burns off acute distress and resets the nervous system.' }
+];
+
+const VALUES_LIST = ['Acceptance','Achievement','Admiration','Appreciation','Asking for help','Assertiveness','Authenticity','Autonomy','Belonging','Caring','Challenge','Commitment','Compassion','Confidence','Connection','Contribution','Cooperation','Courage','Creativity','Curiosity','Dependability','Embracing the moment','Encouragement','Equality','Excitement','Fairness','Flexibility','Forgiveness','Freedom','Friendliness','Friendship','Fun','Generosity','Genuineness','Gratitude','Helpfulness','Honesty','Hope','Humility','Humor','Independence','Individuality','Industry','Justice','Kindness','Knowledge / learning','Mindfulness','Moderation','Nurturance','Open-mindedness','Order','Patience','Persistence','Productivity','Purpose','Realism','Reciprocity','Respect','Responsibility','Safety','Security','Seeing possibilities','Self-awareness','Self-care','Self-control','Self-development','Skillfulness','Staying with uncertainty','Supportiveness','Trust','Wisdom'];
+
+const EMOTIONS = ['Anxious','Sad','Angry','Frustrated','Embarrassed','Hopeful','Excited','Calm','Numb','Overwhelmed','Ashamed','Tired'];
+
+const STORAGE_KEY = 'dnav-entries-v1';
+
+// ============================================================
+// STATE
+// ============================================================
+
+const state = {
+  view: 'entry',
+  currentStep: 0,
+  entry: makeBlankEntry(),
+  entries: [],
+  advisorOpen: false,
+  noticerOpen: false,
+  modalEntryId: null
+};
+
+function makeBlankEntry() {
+  return {
+    id: null, createdAt: null,
+    experimentText: '', zone: '', safetyDropped: '',
+    values: [], valuesNote: '',
+    prediction: '', otherMessages: '', advisorTools: [],
+    anxiety: 50, emotions: [], willingness: 50, noticerTools: [],
+    outcome: ''
+  };
+}
+
+function loadEntries() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state.entries = JSON.parse(raw);
+  } catch (e) { console.warn('Could not load entries:', e); }
+}
+
+function saveEntries() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries));
+  } catch (e) { console.warn('Could not save entries:', e); }
+}
+
+function zoneFromAnxiety(a) {
+  if (a < 30) return ZONES.yellow;
+  if (a <= 80) return ZONES.orange;
+  return ZONES.red;
+}
+
+function toolName(id, list) {
+  return (list.find(t => t.id === id) || {}).name || id;
+}
+
+function esc(s) {
+  return (s == null ? '' : String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+
+function render() {
+  const main = document.getElementById('main-content');
+  if (state.view === 'entry') main.innerHTML = renderEntryView();
+  else if (state.view === 'history') main.innerHTML = renderHistoryView();
+  else if (state.view === 'more') main.innerHTML = renderMoreView();
+
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === state.view);
+  });
+
+  if (state.view === 'entry') bindEntryEvents();
+  else if (state.view === 'history') bindHistoryEvents();
+  else if (state.view === 'more') bindMoreEvents();
+
+  if (state.modalEntryId) renderModal();
+}
+
+function renderEntryView() {
+  const stepNav = STEPS.map((s, i) => `
+    <button class="step-pill ${i === state.currentStep ? 'active' : ''}" data-step="${i}">
+      <span class="pname">${s.dnaLabel}</span>${i+1}. ${s.short}
+    </button>`).join('');
+
+  const s = STEPS[state.currentStep];
+  let body = '';
+  if (s.key === 'discoverer1') body = renderDiscoverer1();
+  else if (s.key === 'values') body = renderValues();
+  else if (s.key === 'advisor') body = renderAdvisor();
+  else if (s.key === 'noticer') body = renderNoticer();
+  else if (s.key === 'discoverer2') body = renderDiscoverer2();
+
+  const isLast = state.currentStep === STEPS.length - 1;
+
+  return `
+    <div class="step-nav">${stepNav}</div>
+    <div class="step-card">
+      <div class="step-header">
+        <span class="dna-badge ${s.cls}">${s.dnaLabel}</span>
+        <h2 class="step-title">${s.title}</h2>
+      </div>
+      ${body}
+    </div>
+    <div class="nav-row">
+      <button class="btn" id="back-btn" ${state.currentStep === 0 ? 'disabled' : ''}>Back</button>
+      <button class="btn btn-primary" id="next-btn">${isLast ? 'Save entry' : 'Next'}</button>
+    </div>
+  `;
+}
+
+function renderDiscoverer1() {
+  const e = state.entry;
+  const zoneCallout = e.zone
+    ? `<div class="zone-callout ${e.zone}">${ZONES[e.zone].desc}</div>`
+    : '';
+  return `
+    <label class="field-label" for="f-experiment">Behavioural experiment</label>
+    <textarea id="f-experiment" rows="3" placeholder="What will you try? Describe the action.">${esc(e.experimentText)}</textarea>
+    <p class="help-text">A small, deliberate action to test what happens. The Discoverer steps out of the comfort zone to learn through doing.</p>
+
+    <label class="field-label">Zone</label>
+    <p class="help-text">Which zone do you expect this experiment to fall into?</p>
+    <div class="zone-buttons">
+      ${Object.values(ZONES).map(z => `
+        <button class="zone-btn ${z.key} ${e.zone === z.key ? 'selected' : ''}" data-zone="${z.key}">
+          <span class="zone-btn-name">${z.label}</span>
+          <span class="zone-btn-range">${z.range}</span>
+        </button>`).join('')}
+    </div>
+    ${zoneCallout}
+
+    <label class="field-label" for="f-safety">Safety behaviour I'm dropping <span style="color: var(--ink-muted); font-weight: 400;">(optional)</span></label>
+    <textarea id="f-safety" rows="2" placeholder="A behaviour you usually use to feel safer that you'll deliberately drop this time. E.g. avoiding eye contact, over-preparing, using your phone.">${esc(e.safetyDropped)}</textarea>
+    <p class="help-text">Safety behaviours give short-term relief but keep avoidance going. Dropping one is itself an experiment.</p>
+  `;
+}
+
+function renderValues() {
+  const e = state.entry;
+  const valuesHtml = VALUES_LIST.map(v => `
+    <span class="value-chip ${e.values.includes(v) ? 'selected' : ''}" data-value="${esc(v)}">${esc(v)}</span>
+  `).join('');
+  return `
+    <label class="field-label">Value(s) this experiment serves</label>
+    <p class="help-text">Pick one or more. Values are like guiding stars — directions, not destinations.</p>
+    <div class="values-grid">${valuesHtml}</div>
+
+    <label class="field-label" for="f-values-note">Add your own or note why this matters <span style="color: var(--ink-muted); font-weight: 400;">(optional)</span></label>
+    <textarea id="f-values-note" rows="2" placeholder="Anything else about why this matters to you…">${esc(e.valuesNote)}</textarea>
+  `;
+}
+
+function renderAdvisor() {
+  const e = state.entry;
+  const count = e.advisorTools.length;
+  const toolsHtml = ADVISOR_TOOLS.map(t => {
+    const checked = e.advisorTools.includes(t.id);
+    return `
+      <div class="tool-item ${checked ? 'selected' : ''}">
+        <label class="tool-head">
+          <input type="checkbox" ${checked ? 'checked' : ''} data-tool-cb="${t.id}">
+          <span class="tool-name">${t.name}</span>
+        </label>
+        <div class="tool-desc">${t.desc}</div>
+      </div>`;
+  }).join('');
+
+  return `
+    <label class="field-label" for="f-prediction">Advisor's prediction</label>
+    <textarea id="f-prediction" rows="2" placeholder="What does your mind predict will happen?">${esc(e.prediction)}</textarea>
+
+    <label class="field-label" for="f-other">Other advisor messages <span style="color: var(--ink-muted); font-weight: 400;">(during &amp; after)</span></label>
+    <textarea id="f-other" rows="2" placeholder="Other thoughts, criticisms, or commentary your mind offered.">${esc(e.otherMessages)}</textarea>
+
+    <button class="reveal-btn ${state.advisorOpen ? 'open' : ''}" id="advisor-toggle">
+      <span class="arrow">▶</span>
+      <span>Unhooking tools to try</span>
+      ${count > 0 ? `<span class="reveal-summary compact">(${count} selected)</span>` : ''}
+    </button>
+    ${state.advisorOpen
+      ? `<div class="tool-list">${toolsHtml}</div>`
+      : (count > 0 ? `<div class="reveal-summary">Selected: ${e.advisorTools.map(id => esc(toolName(id, ADVISOR_TOOLS))).join(', ')}</div>` : '')
+    }
+  `;
+}
+
+function renderNoticer() {
+  const e = state.entry;
+  const z = zoneFromAnxiety(e.anxiety);
+  const count = e.noticerTools.length;
+  const toolsHtml = NOTICER_TOOLS.map(t => {
+    const checked = e.noticerTools.includes(t.id);
+    return `
+      <div class="tool-item ${checked ? 'selected' : ''}">
+        <label class="tool-head">
+          <input type="checkbox" ${checked ? 'checked' : ''} data-ntool-cb="${t.id}">
+          <span class="tool-name">${t.name}</span>
+        </label>
+        <div class="tool-desc">${t.desc}</div>
+      </div>`;
+  }).join('');
+
+  const emotionChips = EMOTIONS.map(em => `
+    <span class="chip ${e.emotions.includes(em) ? 'selected' : ''}" data-emotion="${em}">${em}</span>
+  `).join('');
+
+  return `
+    <label class="field-label">Anxiety meter</label>
+    <p class="help-text">How intense was the anxiety during the experiment? (0–100)</p>
+    <div class="slider-row">
+      <input type="range" id="f-anxiety" min="0" max="100" step="1" value="${e.anxiety}">
+      <span class="slider-val" id="f-anxiety-val">${e.anxiety}</span>
+    </div>
+    <div class="anxiety-bar"><div></div><div></div><div></div></div>
+    <span class="zone-pill ${z.key}" id="zone-pill">${z.label}</span>
+
+    <label class="field-label">Which emotions are showing up?</label>
+    <div class="chip-row">${emotionChips}</div>
+
+    <label class="field-label">Willingness to have difficult emotions</label>
+    <p class="help-text">Willingness isn't wanting. It's making room for what shows up. (0–100)</p>
+    <div class="slider-row">
+      <input type="range" id="f-willing" min="0" max="100" step="1" value="${e.willingness}">
+      <span class="slider-val" id="f-willing-val">${e.willingness}</span>
+    </div>
+
+    <button class="reveal-btn ${state.noticerOpen ? 'open' : ''}" id="noticer-toggle">
+      <span class="arrow">▶</span>
+      <span>Grounding and willingness tools to try</span>
+      ${count > 0 ? `<span class="reveal-summary compact">(${count} selected)</span>` : ''}
+    </button>
+    ${state.noticerOpen
+      ? `<div class="tool-list">${toolsHtml}</div>`
+      : (count > 0 ? `<div class="reveal-summary">Selected: ${e.noticerTools.map(id => esc(toolName(id, NOTICER_TOOLS))).join(', ')}</div>` : '')
+    }
+  `;
+}
+
+function renderDiscoverer2() {
+  const e = state.entry;
+  return `
+    <label class="field-label" for="f-outcome">What happened? What did you learn?</label>
+    <textarea id="f-outcome" rows="6" placeholder="Describe what actually happened, what you noticed, and what you learned. Did the Advisor's prediction match reality?">${esc(e.outcome)}</textarea>
+  `;
+}
+
+function renderHistoryView() {
+  if (!state.entries.length) {
+    return `
+      <div class="empty-state">
+        <span class="empty-display">No entries yet.</span>
+        Complete a behavioural experiment to see it here.
+      </div>`;
+  }
+  const items = state.entries.map(e => {
+    const date = new Date(e.createdAt).toLocaleString(undefined, {dateStyle:'medium', timeStyle:'short'});
+    const preview = e.experimentText || '(no description)';
+    const z = zoneFromAnxiety(e.anxiety);
+    const zPlanned = e.zone ? ZONES[e.zone] : null;
+    return `
+      <div class="entry-row" data-entry-id="${e.id}">
+        <div class="entry-row-head">
+          <p class="entry-title">${esc(preview)}</p>
+          <span class="entry-date">${esc(date)}</span>
+        </div>
+        <div class="entry-meta">
+          ${zPlanned ? `<span class="zone-pill ${zPlanned.key}" style="margin: 0;">Planned: ${zPlanned.label}</span>` : ''}
+          <span class="zone-pill ${z.key}" style="margin: 0;">Anxiety ${e.anxiety}</span>
+          <span class="entry-meta-item">Willingness ${e.willingness}</span>
+          <span class="entry-meta-item">${e.values.length} value${e.values.length===1?'':'s'}</span>
+          <span class="entry-meta-item">${e.advisorTools.length + e.noticerTools.length} tool${(e.advisorTools.length + e.noticerTools.length)===1?'':'s'}</span>
+        </div>
+      </div>`;
+  }).join('');
+  return `
+    <div class="toolbar">
+      <button class="btn" id="print-btn">Print all</button>
+      <button class="btn" id="export-btn">Export JSON</button>
+    </div>
+    <div id="entries-list">${items}</div>
+  `;
+}
+
+function renderMoreView() {
+  return `
+    <div class="step-card">
+      <h2 class="step-title" style="margin-bottom: 8px;">About this app</h2>
+      <p style="font-size: 14px; color: var(--ink-soft); line-height: 1.6;">
+        A self-monitoring tool based on the DNA-V model — a framework with four processes:
+        <strong>Discoverer</strong> (trying new things),
+        <strong>Noticer</strong> (present-moment awareness),
+        <strong>Advisor</strong> (the thinking mind), and
+        <strong>Values</strong> (what matters).
+      </p>
+      <p style="font-size: 14px; color: var(--ink-soft); line-height: 1.6;">
+        Use it to track behavioural experiments — small, deliberate actions you take to learn through doing.
+      </p>
+    </div>
+
+    <div class="step-card">
+      <h2 class="step-title" style="margin-bottom: 16px;">Your data</h2>
+      <p style="font-size: 13px; color: var(--ink-muted); line-height: 1.6; margin: 0 0 16px;">
+        Entries are stored only on this device, in your browser. They never leave your phone unless you export them.
+      </p>
+      <div style="display: grid; gap: 8px;">
+        <button class="btn" id="export-btn-2">Export entries as JSON</button>
+        <label class="btn" style="text-align: center; cursor: pointer; display: block;">
+          Import from JSON
+          <input type="file" accept="application/json" id="import-input" style="display: none;">
+        </label>
+        <button class="btn btn-danger" id="clear-btn">Delete all entries…</button>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <h2 class="step-title" style="margin-bottom: 8px; font-size: 18px;">Disclaimer</h2>
+      <p style="font-size: 13px; color: var(--ink-muted); line-height: 1.6;">
+        This is a self-monitoring tool, not a substitute for professional mental health care. If you're struggling, please reach out to a qualified clinician.
+      </p>
+    </div>
+  `;
+}
+
+function renderModal() {
+  const existing = document.getElementById('modal-overlay');
+  if (existing) existing.remove();
+
+  const e = state.entries.find(x => x.id === state.modalEntryId);
+  if (!e) return;
+
+  const z = zoneFromAnxiety(e.anxiety);
+  const zPlanned = e.zone ? ZONES[e.zone] : null;
+  const date = new Date(e.createdAt).toLocaleString(undefined, {dateStyle:'long', timeStyle:'short'});
+
+  const overlay = document.createElement('div');
+  overlay.id = 'modal-overlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h2 class="modal-title">${esc(e.experimentText || 'Untitled experiment')}</h2>
+        <button class="modal-close" id="modal-close" aria-label="Close">×</button>
+      </div>
+      <p class="label" style="margin-top: -8px; margin-bottom: 16px;">${esc(date)}</p>
+
+      <div class="modal-section">
+        <h3>Discoverer</h3>
+        ${zPlanned ? `<p><span class="zone-pill ${zPlanned.key}">Planned zone: ${zPlanned.label}</span></p>` : ''}
+        ${e.safetyDropped ? `<p><span class="label">Safety behaviour dropped:</span><br>${esc(e.safetyDropped)}</p>` : ''}
+      </div>
+
+      ${(e.values.length || e.valuesNote) ? `
+      <div class="modal-section">
+        <h3>Values</h3>
+        ${e.values.length ? `<p>${e.values.map(esc).join(', ')}</p>` : ''}
+        ${e.valuesNote ? `<p>${esc(e.valuesNote)}</p>` : ''}
+      </div>` : ''}
+
+      <div class="modal-section">
+        <h3>Advisor</h3>
+        ${e.prediction ? `<p><span class="label">Prediction:</span><br>${esc(e.prediction)}</p>` : ''}
+        ${e.otherMessages ? `<p><span class="label">Other messages:</span><br>${esc(e.otherMessages)}</p>` : ''}
+        ${e.advisorTools.length ? `<p><span class="label">Unhooking tools used:</span><br>${e.advisorTools.map(id => esc(toolName(id, ADVISOR_TOOLS))).join(', ')}</p>` : ''}
+      </div>
+
+      <div class="modal-section">
+        <h3>Noticer</h3>
+        <p><span class="zone-pill ${z.key}">Anxiety ${e.anxiety} · ${z.label}</span></p>
+        ${e.emotions.length ? `<p><span class="label">Emotions:</span> ${e.emotions.map(esc).join(', ')}</p>` : ''}
+        <p><span class="label">Willingness:</span> ${e.willingness} / 100</p>
+        ${e.noticerTools.length ? `<p><span class="label">Grounding and willingness tools:</span><br>${e.noticerTools.map(id => esc(toolName(id, NOTICER_TOOLS))).join(', ')}</p>` : ''}
+      </div>
+
+      ${e.outcome ? `
+      <div class="modal-section">
+        <h3>What happened</h3>
+        <p>${esc(e.outcome)}</p>
+      </div>` : ''}
+
+      <div class="modal-actions">
+        <button class="btn" id="modal-print">Print</button>
+        <button class="btn btn-danger" id="modal-delete">Delete</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('click', ev => {
+    if (ev.target === overlay) closeModal();
+  });
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('modal-print').addEventListener('click', () => printSingle(e));
+  document.getElementById('modal-delete').addEventListener('click', () => {
+    if (confirm('Delete this entry? This cannot be undone.')) {
+      state.entries = state.entries.filter(x => x.id !== state.modalEntryId);
+      saveEntries();
+      closeModal();
+      render();
+    }
+  });
+}
+
+function closeModal() {
+  state.modalEntryId = null;
+  const m = document.getElementById('modal-overlay');
+  if (m) m.remove();
+}
+
+// ============================================================
+// EVENT BINDING
+// ============================================================
+
+function bindEntryEvents() {
+  const e = state.entry;
+
+  document.querySelectorAll('.step-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      state.currentStep = parseInt(p.dataset.step);
+      render();
+    });
+  });
+
+  document.getElementById('back-btn').addEventListener('click', () => {
+    if (state.currentStep > 0) { state.currentStep--; render(); }
+  });
+  document.getElementById('next-btn').addEventListener('click', () => {
+    if (state.currentStep < STEPS.length - 1) {
+      state.currentStep++;
+      render();
+    } else {
+      saveCurrentEntry();
+    }
+  });
+
+  bindInput('f-experiment', v => e.experimentText = v);
+  bindInput('f-safety', v => e.safetyDropped = v);
+  bindInput('f-values-note', v => e.valuesNote = v);
+  bindInput('f-prediction', v => e.prediction = v);
+  bindInput('f-other', v => e.otherMessages = v);
+  bindInput('f-outcome', v => e.outcome = v);
+
+  document.querySelectorAll('[data-zone]').forEach(b => {
+    b.addEventListener('click', () => {
+      e.zone = b.dataset.zone;
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-value]').forEach(c => {
+    c.addEventListener('click', () => {
+      const v = c.dataset.value;
+      if (e.values.includes(v)) {
+        e.values = e.values.filter(x => x !== v);
+        c.classList.remove('selected');
+      } else {
+        e.values.push(v);
+        c.classList.add('selected');
+      }
+    });
+  });
+
+  const advisorToggle = document.getElementById('advisor-toggle');
+  if (advisorToggle) advisorToggle.addEventListener('click', () => {
+    state.advisorOpen = !state.advisorOpen;
+    render();
+  });
+
+  const noticerToggle = document.getElementById('noticer-toggle');
+  if (noticerToggle) noticerToggle.addEventListener('click', () => {
+    state.noticerOpen = !state.noticerOpen;
+    render();
+  });
+
+  document.querySelectorAll('[data-tool-cb]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const id = cb.dataset.toolCb;
+      if (cb.checked) { if (!e.advisorTools.includes(id)) e.advisorTools.push(id); }
+      else { e.advisorTools = e.advisorTools.filter(t => t !== id); }
+      cb.closest('.tool-item').classList.toggle('selected', cb.checked);
+    });
+  });
+
+  document.querySelectorAll('[data-ntool-cb]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const id = cb.dataset.ntoolCb;
+      if (cb.checked) { if (!e.noticerTools.includes(id)) e.noticerTools.push(id); }
+      else { e.noticerTools = e.noticerTools.filter(t => t !== id); }
+      cb.closest('.tool-item').classList.toggle('selected', cb.checked);
+    });
+  });
+
+  const anxietyEl = document.getElementById('f-anxiety');
+  if (anxietyEl) {
+    anxietyEl.addEventListener('input', () => {
+      e.anxiety = parseInt(anxietyEl.value);
+      document.getElementById('f-anxiety-val').textContent = e.anxiety;
+      const z = zoneFromAnxiety(e.anxiety);
+      const pill = document.getElementById('zone-pill');
+      pill.className = 'zone-pill ' + z.key;
+      pill.textContent = z.label;
+    });
+  }
+
+  const willingEl = document.getElementById('f-willing');
+  if (willingEl) {
+    willingEl.addEventListener('input', () => {
+      e.willingness = parseInt(willingEl.value);
+      document.getElementById('f-willing-val').textContent = e.willingness;
+    });
+  }
+
+  document.querySelectorAll('[data-emotion]').forEach(c => {
+    c.addEventListener('click', () => {
+      const em = c.dataset.emotion;
+      if (e.emotions.includes(em)) {
+        e.emotions = e.emotions.filter(x => x !== em);
+        c.classList.remove('selected');
+      } else {
+        e.emotions.push(em);
+        c.classList.add('selected');
+      }
+    });
+  });
+}
+
+function bindInput(id, fn) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', () => fn(el.value));
+}
+
+function bindHistoryEvents() {
+  document.querySelectorAll('.entry-row').forEach(row => {
+    row.addEventListener('click', () => {
+      state.modalEntryId = row.dataset.entryId;
+      render();
+    });
+  });
+  const printBtn = document.getElementById('print-btn');
+  if (printBtn) printBtn.addEventListener('click', printAll);
+  const exportBtn = document.getElementById('export-btn');
+  if (exportBtn) exportBtn.addEventListener('click', exportEntries);
+}
+
+function bindMoreEvents() {
+  const exportBtn = document.getElementById('export-btn-2');
+  if (exportBtn) exportBtn.addEventListener('click', exportEntries);
+
+  const importInput = document.getElementById('import-input');
+  if (importInput) importInput.addEventListener('change', importEntries);
+
+  const clearBtn = document.getElementById('clear-btn');
+  if (clearBtn) clearBtn.addEventListener('click', () => {
+    if (confirm('Delete ALL entries? This cannot be undone.')) {
+      state.entries = [];
+      saveEntries();
+      render();
+    }
+  });
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+
+function saveCurrentEntry() {
+  const e = state.entry;
+  e.id = 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+  e.createdAt = new Date().toISOString();
+  state.entries.unshift({...e});
+  saveEntries();
+  state.entry = makeBlankEntry();
+  state.currentStep = 0;
+  state.advisorOpen = false;
+  state.noticerOpen = false;
+  state.view = 'history';
+  render();
+}
+
+function exportEntries() {
+  if (!state.entries.length) {
+    alert('No entries to export.');
+    return;
+  }
+  const data = JSON.stringify(state.entries, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `dnav-entries-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importEntries(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw new Error('Not an array');
+      const merge = confirm(`Import ${data.length} entries? OK = merge with existing, Cancel = replace all.`);
+      if (merge) {
+        state.entries = [...data, ...state.entries];
+      } else {
+        if (!confirm('Replace ALL existing entries? This cannot be undone.')) return;
+        state.entries = data;
+      }
+      saveEntries();
+      alert('Imported successfully.');
+      render();
+    } catch (err) {
+      alert('Could not import: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  ev.target.value = '';
+}
+
+function printSingle(e) {
+  const z = zoneFromAnxiety(e.anxiety);
+  const zPlanned = e.zone ? ZONES[e.zone] : null;
+  const date = new Date(e.createdAt).toLocaleString();
+  const w = window.open('', '_blank');
+  w.document.write(`
+    <!DOCTYPE html>
+    <html><head><title>DNA-V Entry</title>
+    <style>
+      body { font-family: Georgia, serif; max-width: 720px; margin: 40px auto; padding: 20px; line-height: 1.5; }
+      h1 { font-size: 22px; }
+      h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-top: 24px; }
+      p { margin: 8px 0; }
+      .label { color: #666; font-size: 13px; }
+      .meta { color: #888; font-size: 13px; margin-bottom: 24px; }
+    </style></head><body>
+    <h1>${esc(e.experimentText || 'Untitled experiment')}</h1>
+    <p class="meta">${esc(date)}</p>
+
+    <h2>Discoverer</h2>
+    ${zPlanned ? `<p><span class="label">Planned zone:</span> ${esc(zPlanned.label)} (${esc(zPlanned.range)})</p>` : ''}
+    ${e.safetyDropped ? `<p><span class="label">Safety behaviour dropped:</span> ${esc(e.safetyDropped)}</p>` : ''}
+
+    ${(e.values.length || e.valuesNote) ? `
+    <h2>Values</h2>
+    ${e.values.length ? `<p>${e.values.map(esc).join(', ')}</p>` : ''}
+    ${e.valuesNote ? `<p>${esc(e.valuesNote)}</p>` : ''}` : ''}
+
+    <h2>Advisor</h2>
+    ${e.prediction ? `<p><span class="label">Prediction:</span> ${esc(e.prediction)}</p>` : ''}
+    ${e.otherMessages ? `<p><span class="label">Other messages:</span> ${esc(e.otherMessages)}</p>` : ''}
+    ${e.advisorTools.length ? `<p><span class="label">Unhooking tools:</span> ${e.advisorTools.map(id => esc(toolName(id, ADVISOR_TOOLS))).join(', ')}</p>` : ''}
+
+    <h2>Noticer</h2>
+    <p><span class="label">Anxiety:</span> ${e.anxiety} / 100 (${esc(z.label)})</p>
+    ${e.emotions.length ? `<p><span class="label">Emotions:</span> ${e.emotions.map(esc).join(', ')}</p>` : ''}
+    <p><span class="label">Willingness:</span> ${e.willingness} / 100</p>
+    ${e.noticerTools.length ? `<p><span class="label">Grounding and willingness tools:</span> ${e.noticerTools.map(id => esc(toolName(id, NOTICER_TOOLS))).join(', ')}</p>` : ''}
+
+    ${e.outcome ? `<h2>What happened</h2><p>${esc(e.outcome)}</p>` : ''}
+
+    <script>window.onload = () => window.print();<\/script>
+    </body></html>`);
+  w.document.close();
+}
+
+function printAll() {
+  if (!state.entries.length) return;
+  const w = window.open('', '_blank');
+  const rows = state.entries.map(e => {
+    const z = zoneFromAnxiety(e.anxiety);
+    const zPlanned = e.zone ? ZONES[e.zone] : null;
+    return `
+      <tr>
+        <td>${esc(e.experimentText)}${zPlanned ? `<br><em>Planned zone: ${esc(zPlanned.label)}</em>` : ''}${e.safetyDropped ? `<br><em>Dropped: ${esc(e.safetyDropped)}</em>` : ''}</td>
+        <td>${e.values.map(esc).join(', ')}${e.valuesNote ? `<br><em>${esc(e.valuesNote)}</em>` : ''}</td>
+        <td>${e.prediction ? `<strong>Prediction:</strong> ${esc(e.prediction)}<br>` : ''}${e.otherMessages ? `<strong>Other:</strong> ${esc(e.otherMessages)}` : ''}</td>
+        <td>${e.advisorTools.map(id => esc(toolName(id, ADVISOR_TOOLS))).join(', ')}</td>
+        <td>Anxiety: ${e.anxiety} (${esc(z.label)})<br>${esc(e.emotions.join(', '))}<br>Willingness: ${e.willingness}</td>
+        <td>${e.noticerTools.map(id => esc(toolName(id, NOTICER_TOOLS))).join(', ')}</td>
+        <td>${esc(e.outcome)}</td>
+      </tr>`;
+  }).join('');
+  w.document.write(`
+    <!DOCTYPE html>
+    <html><head><title>DNA-V Log</title>
+    <style>
+      body { font-family: Georgia, serif; margin: 20px; }
+      h1 { font-size: 20px; }
+      table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
+      th, td { border: 0.5px solid #999; padding: 8px; vertical-align: top; text-align: left; word-wrap: break-word; }
+      th { background: #f4f0e8; font-weight: 600; }
+      th .sub { font-weight: 400; color: #666; display: block; font-size: 10px; }
+    </style></head><body>
+    <h1>DNA-V Behavioural Log — ${state.entries.length} entries</h1>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 14%">Discoverer<span class="sub">Experiment / zone / safety</span></th>
+          <th style="width: 11%">Values<span class="sub">Values served</span></th>
+          <th style="width: 14%">Advisor<span class="sub">Prediction & messages</span></th>
+          <th style="width: 12%">Advisor<span class="sub">Unhooking tools</span></th>
+          <th style="width: 16%">Noticer<span class="sub">Anxiety, emotions, willingness</span></th>
+          <th style="width: 13%">Noticer<span class="sub">Grounding & willingness tools</span></th>
+          <th style="width: 20%">Discoverer<span class="sub">What happened</span></th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <script>window.onload = () => window.print();<\/script>
+    </body></html>`);
+  w.document.close();
+}
+
+// ============================================================
+// TAB BAR
+// ============================================================
+
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    state.view = b.dataset.view;
+    render();
+  });
+});
+
+// ============================================================
+// BOOT
+// ============================================================
+
+loadEntries();
+render();
+
+</script>
+
+</body>
+</html>
