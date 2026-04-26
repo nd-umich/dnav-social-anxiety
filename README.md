@@ -1,6 +1,6 @@
 # DNA-V Behavioural Log
 
-A self-monitoring web app for tracking behavioural experiments using the DNA-V model for social anxiety (Discoverer, Noticer, Advisor, Values).
+A self-monitoring web app for tracking behavioural experiments using the DNA-V model for social anxiety (Discoverer, Noticer, Advisor, Values). Data is stored locally, do not include PHI. 
 
 ## Disclaimer
 
