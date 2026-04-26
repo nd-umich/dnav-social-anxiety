@@ -156,14 +156,19 @@
     font-size: 11px;
     color: var(--ink-soft);
     font-weight: 500;
-    transition: border-color 0.15s, background 0.15s;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    border-bottom: 3px solid transparent;
   }
   .step-pill:hover { border-color: var(--line); }
-  .step-pill.active {
-    background: var(--surface);
-    border-color: var(--ink);
-    color: var(--ink);
-  }
+  /* DNA-V color tint on each pill (always visible, intensifies when active) */
+  .step-pill.dna-d { border-bottom-color: var(--d-line); }
+  .step-pill.dna-v { border-bottom-color: var(--v-line); }
+  .step-pill.dna-a { border-bottom-color: var(--a-line); }
+  .step-pill.dna-n { border-bottom-color: var(--n-line); }
+  .step-pill.active.dna-d { background: var(--d-bg); color: var(--d-ink); border-color: var(--d-line); }
+  .step-pill.active.dna-v { background: var(--v-bg); color: var(--v-ink); border-color: var(--v-line); }
+  .step-pill.active.dna-a { background: var(--a-bg); color: var(--a-ink); border-color: var(--a-line); }
+  .step-pill.active.dna-n { background: var(--n-bg); color: var(--n-ink); border-color: var(--n-line); }
   .step-pill .pname {
     display: block;
     font-size: 9px;
@@ -173,7 +178,7 @@
     margin-bottom: 3px;
     font-weight: 500;
   }
-  .step-pill.active .pname { color: var(--ink-soft); }
+  .step-pill.active .pname { color: inherit; opacity: 0.7; }
 
   /* Step card */
   .step-card {
@@ -246,6 +251,17 @@
     outline: none;
     border-color: var(--ink-soft);
     background: var(--surface);
+  }
+  textarea::placeholder, input[type="text"]::placeholder {
+    color: var(--ink-muted);
+    font-size: 13px;
+    opacity: 1;
+    font-style: italic;
+  }
+  textarea::-webkit-input-placeholder, input[type="text"]::-webkit-input-placeholder {
+    color: var(--ink-muted);
+    font-size: 13px;
+    font-style: italic;
   }
 
   /* Sliders */
@@ -843,7 +859,7 @@ const ADVISOR_TOOLS = [
 ];
 
 const GROUNDING_TOOLS = [
-  { id: 'drop-anchor', name: 'Drop anchor', desc: 'Push your feet into the floor, straighten your back, look around and name 5 things you can see. Anchors you in the present.' },
+  { id: 'drop-anchor', name: 'Drop anchor (ACE)', desc: 'Russ Harris\'s ACE formula. <strong>A</strong>cknowledge: silently notice what\'s showing up — "I\'m noticing anxiety," "I\'m noticing the thought I\'m not good enough." <strong>C</strong>ome back into your body — push your feet into the floor, straighten your back, stretch, slow your breath. <strong>E</strong>ngage in what you\'re doing — look around and notice 5 things you see, 3 you hear, then refocus on the task at hand.' },
   { id: '54321', name: '5-4-3-2-1 senses', desc: '5 things you see, 4 you can touch, 3 you hear, 2 you smell, 1 you taste. Brings attention back to the body.' },
   { id: 'cold-water', name: 'Cold water', desc: 'Splash cold water on your face or wrists, or hold a cold object. Activates the dive reflex and helps regulate when overwhelmed.' },
   { id: 'strong-sensation', name: 'Strong sensation', desc: 'A sour candy, ice cube, or strong mint. A sharp sensory anchor when distress is too high to think.' },
@@ -942,7 +958,7 @@ function render() {
 
 function renderEntryView() {
   const stepNav = STEPS.map((s, i) => `
-    <button class="step-pill ${i === state.currentStep ? 'active' : ''}" data-step="${i}">
+    <button class="step-pill ${s.cls} ${i === state.currentStep ? 'active' : ''}" data-step="${i}">
       <span class="pname">${s.dnaLabel}</span>${i+1}. ${s.short}
     </button>`).join('');
 
@@ -1148,7 +1164,7 @@ function renderHistoryView() {
   }).join('');
   return `
     <div class="toolbar">
-      <button class="btn" id="print-btn">Print all</button>
+      <button class="btn" id="print-btn">Export PDF</button>
       <button class="btn" id="export-btn">Export JSON</button>
     </div>
     <div id="entries-list">${items}</div>
@@ -1177,6 +1193,7 @@ function renderMoreView() {
         Entries are stored only on this device, in your browser. They never leave your phone unless you export them.
       </p>
       <div style="display: grid; gap: 8px;">
+        <button class="btn" id="export-pdf-btn">Export entries as PDF</button>
         <button class="btn" id="export-btn-2">Export entries as JSON</button>
         <label class="btn" style="text-align: center; cursor: pointer; display: block;">
           Import from JSON
@@ -1184,6 +1201,9 @@ function renderMoreView() {
         </label>
         <button class="btn btn-danger" id="clear-btn">Delete all entries…</button>
       </div>
+      <p style="font-size: 12px; color: var(--ink-muted); line-height: 1.55; margin: 12px 0 0;">
+        PDF export opens your phone's print dialog — choose "Save as PDF" or "Save to Files" to save it. JSON export is best for backup or moving entries between devices.
+      </p>
     </div>
 
     <div class="step-card">
@@ -1411,12 +1431,18 @@ function bindHistoryEvents() {
     });
   });
   const printBtn = document.getElementById('print-btn');
-  if (printBtn) printBtn.addEventListener('click', printAll);
+  if (printBtn) printBtn.addEventListener('click', exportPdf);
   const exportBtn = document.getElementById('export-btn');
   if (exportBtn) exportBtn.addEventListener('click', exportEntries);
 }
 
 function bindMoreEvents() {
+  const exportPdfBtn = document.getElementById('export-pdf-btn');
+  if (exportPdfBtn) exportPdfBtn.addEventListener('click', () => {
+    if (!state.entries.length) { alert('No entries to export yet.'); return; }
+    exportPdf();
+  });
+
   const exportBtn = document.getElementById('export-btn-2');
   if (exportBtn) exportBtn.addEventListener('click', exportEntries);
 
@@ -1541,51 +1567,135 @@ function printSingle(e) {
   w.document.close();
 }
 
-function printAll() {
+function exportPdf() {
   if (!state.entries.length) return;
   const w = window.open('', '_blank');
-  const rows = state.entries.map(e => {
+  if (!w) {
+    alert('Please allow pop-ups to export PDF.');
+    return;
+  }
+
+  const sections = state.entries.map(e => {
     const z = zoneFromAnxiety(e.anxiety);
     const zPlanned = e.zone ? ZONES[e.zone] : null;
+    const date = new Date(e.createdAt).toLocaleString(undefined, {dateStyle: 'long', timeStyle: 'short'});
+
+    const advisorToolsList = e.advisorTools.length
+      ? `<p><span class="label">Unhooking tools:</span> ${e.advisorTools.map(id => esc(toolName(id, ADVISOR_TOOLS))).join(', ')}</p>` : '';
+    const noticerToolsList = e.noticerTools.length
+      ? `<p><span class="label">Grounding & willingness tools:</span> ${e.noticerTools.map(id => esc(toolName(id, NOTICER_TOOLS))).join(', ')}</p>` : '';
+
     return `
-      <tr>
-        <td>${esc(e.experimentText)}${zPlanned ? `<br><em>Planned zone: ${esc(zPlanned.label)}</em>` : ''}${e.safetyDropped ? `<br><em>Dropped: ${esc(e.safetyDropped)}</em>` : ''}</td>
-        <td>${e.values.map(esc).join(', ')}${e.valuesNote ? `<br><em>${esc(e.valuesNote)}</em>` : ''}</td>
-        <td>${e.prediction ? `<strong>Prediction:</strong> ${esc(e.prediction)}<br>` : ''}${e.otherMessages ? `<strong>Other:</strong> ${esc(e.otherMessages)}` : ''}</td>
-        <td>${e.advisorTools.map(id => esc(toolName(id, ADVISOR_TOOLS))).join(', ')}</td>
-        <td>Anxiety: ${e.anxiety} (${esc(z.label)})<br>${esc(e.emotions.join(', '))}${e.otherEmotion ? '<br>' + esc(e.otherEmotion) : ''}<br>Willingness: ${e.willingness}</td>
-        <td>${e.noticerTools.map(id => esc(toolName(id, NOTICER_TOOLS))).join(', ')}</td>
-        <td>${esc(e.outcome)}</td>
-      </tr>`;
+      <article class="entry">
+        <header class="entry-header">
+          <h2>${esc(e.experimentText || 'Untitled experiment')}</h2>
+          <p class="meta">${esc(date)}</p>
+        </header>
+
+        <section>
+          <h3 class="dna d">Discoverer</h3>
+          ${zPlanned ? `<p><span class="label">Planned zone:</span> ${esc(zPlanned.label)} (${esc(zPlanned.range)})</p>` : ''}
+          ${e.safetyDropped ? `<p><span class="label">Safety behaviour dropped:</span> ${esc(e.safetyDropped)}</p>` : ''}
+        </section>
+
+        ${(e.values.length || e.valuesNote) ? `
+        <section>
+          <h3 class="dna v">Values</h3>
+          ${e.values.length ? `<p>${e.values.map(esc).join(', ')}</p>` : ''}
+          ${e.valuesNote ? `<p>${esc(e.valuesNote)}</p>` : ''}
+        </section>` : ''}
+
+        <section>
+          <h3 class="dna a">Advisor</h3>
+          ${e.prediction ? `<p><span class="label">Prediction:</span> ${esc(e.prediction)}</p>` : ''}
+          ${e.otherMessages ? `<p><span class="label">Other messages:</span> ${esc(e.otherMessages)}</p>` : ''}
+          ${advisorToolsList}
+        </section>
+
+        <section>
+          <h3 class="dna n">Noticer</h3>
+          <p><span class="label">Anxiety:</span> ${e.anxiety} / 100 (${esc(z.label)})</p>
+          ${e.emotions.length ? `<p><span class="label">Emotions:</span> ${e.emotions.map(esc).join(', ')}</p>` : ''}
+          ${e.otherEmotion ? `<p><span class="label">Other emotions:</span> ${esc(e.otherEmotion)}</p>` : ''}
+          <p><span class="label">Willingness:</span> ${e.willingness} / 100</p>
+          ${noticerToolsList}
+        </section>
+
+        ${e.outcome ? `
+        <section>
+          <h3 class="dna d">What happened</h3>
+          <p>${esc(e.outcome)}</p>
+        </section>` : ''}
+      </article>`;
   }).join('');
-  w.document.write(`
-    <!DOCTYPE html>
-    <html><head><title>DNA-V Log</title>
-    <style>
-      body { font-family: Georgia, serif; margin: 20px; }
-      h1 { font-size: 20px; }
-      table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
-      th, td { border: 0.5px solid #999; padding: 8px; vertical-align: top; text-align: left; word-wrap: break-word; }
-      th { background: #f4f0e8; font-weight: 600; }
-      th .sub { font-weight: 400; color: #666; display: block; font-size: 10px; }
-    </style></head><body>
-    <h1>DNA-V Behavioural Log — ${state.entries.length} entries</h1>
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 14%">Discoverer<span class="sub">Experiment / zone / safety</span></th>
-          <th style="width: 11%">Values<span class="sub">Values served</span></th>
-          <th style="width: 14%">Advisor<span class="sub">Prediction & messages</span></th>
-          <th style="width: 12%">Advisor<span class="sub">Unhooking tools</span></th>
-          <th style="width: 16%">Noticer<span class="sub">Anxiety, emotions, willingness</span></th>
-          <th style="width: 13%">Noticer<span class="sub">Grounding & willingness tools</span></th>
-          <th style="width: 20%">Discoverer<span class="sub">What happened</span></th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <script>window.onload = () => window.print();<\/script>
-    </body></html>`);
+
+  w.document.write(`<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>DNA-V Log Export</title>
+<style>
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    max-width: 720px;
+    margin: 32px auto;
+    padding: 0 24px;
+    line-height: 1.55;
+    color: #2a2620;
+  }
+  h1 {
+    font-size: 24px;
+    margin: 0 0 4px;
+    font-weight: 500;
+  }
+  .doc-meta {
+    color: #888;
+    font-size: 13px;
+    margin: 0 0 32px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 16px;
+  }
+  .entry {
+    page-break-after: always;
+    break-after: page;
+    margin-bottom: 40px;
+  }
+  .entry:last-child { page-break-after: auto; break-after: auto; }
+  .entry-header { margin-bottom: 16px; }
+  .entry-header h2 {
+    font-size: 18px;
+    margin: 0 0 4px;
+    font-weight: 500;
+  }
+  .meta {
+    color: #888;
+    font-size: 12px;
+    margin: 0;
+  }
+  section { margin: 16px 0; page-break-inside: avoid; break-inside: avoid; }
+  h3.dna {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 6px;
+    padding: 3px 10px;
+    display: inline-block;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  h3.dna.d { background: #f7e6dc; color: #6b3018; }
+  h3.dna.v { background: #f5e8c8; color: #6b4f0a; }
+  h3.dna.a { background: #e7e3f5; color: #3d3470; }
+  h3.dna.n { background: #def0e7; color: #1f5a44; }
+  p { margin: 6px 0; font-size: 13px; }
+  .label { color: #777; font-size: 12px; }
+  @media print {
+    body { max-width: none; margin: 0; padding: 0.5in; }
+    h3.dna { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style></head><body>
+  <h1>DNA-V Behavioural Log</h1>
+  <p class="doc-meta">${state.entries.length} ${state.entries.length === 1 ? 'entry' : 'entries'} · Exported ${new Date().toLocaleDateString(undefined, {dateStyle: 'long'})}</p>
+  ${sections}
+  <script>window.onload = () => setTimeout(() => window.print(), 250);<\/script>
+</body></html>`);
   w.document.close();
 }
 
