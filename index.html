@@ -34,6 +34,10 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--ink); 
 .header { padding: 24px 0 16px; border-bottom: 0.5px solid var(--line); margin-bottom: 16px; }
 .header h1 { font-family: var(--font-display); font-weight: 500; font-size: 28px; margin: 0 0 4px; letter-spacing: -0.01em; }
 .header .subtitle { font-size: 13px; color: var(--ink-muted); }
+.privacy-notice { margin-top: 12px; padding: 12px 14px; background: var(--surface); border: 0.5px solid var(--line); border-radius: var(--radius); }
+.privacy-notice p { font-size: 13px; color: var(--ink-soft); line-height: 1.55; margin: 0 0 6px; }
+.privacy-notice p:last-child { margin-bottom: 0; }
+.privacy-notice a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
 .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 0.5px solid var(--line); display: grid; grid-template-columns: repeat(3, 1fr); z-index: 50; padding-bottom: env(safe-area-inset-bottom); }
 .tab-btn { background: none; border: none; font-family: inherit; font-size: 13px; color: var(--ink-muted); padding: 14px 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; border-top: 2px solid transparent; margin-top: -1px; font-weight: 500; }
 .tab-btn.active { color: var(--ink); border-top-color: var(--ink); }
@@ -154,11 +158,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 </head>
 <body>
 <div class="app">
-  <header class="header"><h1>DNA-V Behavioural Log</h1>
-    <p class="subtitle">Self-monitoring for behavioural experiments</p>
-    <p class="subtitle"><i>While all data entered into this tool is stored on your computer or phone's browser. For your privacy, please do not add <a href="https://matomo.org/personally-identifiable-information-guide-list-of-pii-examples/"> identifying infomation </a> such as: Name, Phone Number, Address, etc.</i></p>
-    <p class="subtitle"><i>To remove any data from this app, clear your browser's cache or use the Delete All Entries on the More page</i></p>
-  </header>
+  <header class="header"><h1>DNA-V Behavioural Log</h1><p class="subtitle">Self-monitoring for behavioural experiments</p><div class="privacy-notice"><p>Data entered into this tool is stored on your computer or phone's browser.</p><p>For your additional privacy, please do not add <a href="https://matomo.org/personally-identifiable-information-guide-list-of-pii-examples/" target="_blank" rel="noopener">identifying information</a> such as: Name, Phone Number, Address, etc.</p><p>To remove any data from this website, use <a href="#" id="go-more-delete">Delete All Entries</a> on the More page.</p></div></header>
   <main id="main-content"></main>
 </div>
 <nav class="tab-bar">
@@ -249,7 +249,7 @@ function renderHistory(){
   return `<div class="toolbar"><button class="btn" id="exp-pdf">Export PDF</button><button class="btn" id="exp-json">Export JSON</button></div>${S_.entries.map(e=>{const d=new Date(e.createdAt).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'}),p=e.experimentText||e.situation||'(no description)',z=zfa(e.anxiety),at=(e.unhookingTools||[]).length+(e.kindCoachTools||[]).length+(e.noticerTools||[]).length;return `<div class="entry-row" data-eid="${e.id}"><div class="entry-row-head"><p class="entry-title">${esc(p)}</p><span class="entry-date">${esc(d)}</span></div><div class="entry-meta"><span class="entry-meta-item">Wk ${e.week}</span>${e.zone?`<span class="zone-pill ${e.zone}" style="margin:0;">${ZONES[e.zone]?.label||e.zone}</span>`:''}<span class="zone-pill ${z.key}" style="margin:0;">Anxiety ${e.anxiety}</span>${at?`<span class="entry-meta-item">${at} tool${at===1?'':'s'}</span>`:''}</div></div>`;}).join('')}`;
 }
 
-function renderMore(){return `<div class="step-card"><h2 class="step-title" style="margin-bottom:8px;">About</h2><p style="font-size:14px;color:var(--ink-soft);line-height:1.6;">A self-monitoring tool based on the DNA-V model \u2014 <strong>Discoverer</strong>, <strong>Noticer</strong>, <strong>Advisor</strong>, and <strong>Values</strong>. Each week introduces a new skill.</p></div><div class="step-card"><h2 class="step-title" style="margin-bottom:16px;">Your data</h2><p style="font-size:13px;color:var(--ink-muted);line-height:1.6;margin:0 0 16px;">Entries are stored only on this device.</p><div style="display:grid;gap:8px;"><button class="btn" id="m-pdf">Export PDF</button><button class="btn" id="m-json">Export JSON</button><label class="btn" style="text-align:center;cursor:pointer;display:block;">Import JSON<input type="file" accept="application/json" id="imp-in" style="display:none;"></label><button class="btn btn-danger" id="clr-btn">Delete all entries\u2026</button></div></div><div class="step-card"><h2 class="step-title" style="margin-bottom:8px;font-size:18px;">Disclaimer</h2><p style="font-size:13px;color:var(--ink-muted);line-height:1.6;">This is a self-monitoring tool, not a substitute for professional mental health care.</p></div>`;}
+function renderMore(){return `<div class="step-card"><h2 class="step-title" style="margin-bottom:8px;">About</h2><p style="font-size:14px;color:var(--ink-soft);line-height:1.6;">A self-monitoring tool based on the DNA-V model \u2014 <strong>Discoverer</strong>, <strong>Noticer</strong>, <strong>Advisor</strong>, and <strong>Values</strong>. Each week introduces a new skill.</p></div><div class="step-card"><h2 class="step-title" style="margin-bottom:16px;">Your data</h2><p style="font-size:13px;color:var(--ink-muted);line-height:1.6;margin:0 0 16px;">Entries are stored only on this device in your browser\u2019s local storage. They are never sent to any server. <strong>Delete all entries</strong> below fully removes your data. Note: clearing your browser cache alone does not remove local storage \u2014 to manually clear it, go to your browser settings and clear \u201CSite data\u201D or \u201CCookies and site data\u201D for this site.</p><div style="display:grid;gap:8px;"><button class="btn" id="m-pdf">Export PDF</button><button class="btn" id="m-json">Export JSON</button><label class="btn" style="text-align:center;cursor:pointer;display:block;">Import JSON<input type="file" accept="application/json" id="imp-in" style="display:none;"></label><button class="btn btn-danger" id="clr-btn">Delete all entries\u2026</button></div></div><div class="step-card"><h2 class="step-title" style="margin-bottom:8px;font-size:18px;">Disclaimer</h2><p style="font-size:13px;color:var(--ink-muted);line-height:1.6;">This is a self-monitoring tool, not a substitute for professional mental health care.</p></div>`;}
 
 function renderModal(){
   const x=document.getElementById('mo');if(x)x.remove();
@@ -269,6 +269,7 @@ function closeM(){S_.mid=null;const m=document.getElementById('mo');if(m)m.remov
 
 function bindAll(){
   document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>{S_.view=b.dataset.view;render();}));
+  document.getElementById('go-more-delete')?.addEventListener('click',(ev)=>{ev.preventDefault();S_.view='more';render();});
   if(S_.view==='entry'&&S_.wk===0){document.querySelectorAll('.week-btn').forEach(b=>b.addEventListener('click',()=>{S_.wk=parseInt(b.dataset.week);S_.e=mk(S_.wk);S_.cs=0;render();}));return;}
   if(S_.view==='entry'&&S_.wk>0){
     const e=S_.e;if(!e)return;
@@ -300,7 +301,7 @@ function bindAll(){
     document.getElementById('m-pdf')?.addEventListener('click',expPdf);
     document.getElementById('m-json')?.addEventListener('click',expJson);
     document.getElementById('imp-in')?.addEventListener('change',impJson);
-    document.getElementById('clr-btn')?.addEventListener('click',()=>{if(confirm('Delete ALL entries?')){S_.entries=[];save();render();}});
+    document.getElementById('clr-btn')?.addEventListener('click',()=>{if(confirm('Delete ALL entries? This removes all data from your device and cannot be undone.')){S_.entries=[];try{localStorage.removeItem(SK);}catch(e){}render();}});
   }
 }
 function bi(id,fn){const el=document.getElementById(id);if(el)el.addEventListener('input',()=>fn(el.value));}
